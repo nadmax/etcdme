@@ -2,6 +2,7 @@ version: '3'
 
 includes:
   tg: ./tasks/terragrunt/Taskfile.yaml
+  argocd: ./tasks/argocd/Taskfile.yaml
 
 tasks:
   default:
