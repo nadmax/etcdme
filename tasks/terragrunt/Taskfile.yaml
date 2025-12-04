@@ -5,10 +5,8 @@ tasks:
     desc: Run terragrunt command
     summary: |
       Usage:
-        task tg -- stack generate live/etcdme
-        task tg -- stack run plan live/etcdme
-        task tg -- stack run apply live/etcdme
-        task tg -- run-all apply live/etcdme/.terragrunt-stack/network
+        task tg -- plan terraform/live/etcdme-nbg1-dc3
+        task tg -- apply terraform/live/etcdme-nbg1-dc3
     cmds:
       - |
         ARGS="{{.CLI_ARGS}}"
@@ -16,16 +14,15 @@ tasks:
         CMD="${ARGS% *}"
 
         if [ -z "$ARGS" ] || [ "$CMD" = "$ARGS" ]; then
-          echo "Usage: task tg -- <terragrunt args> <dir>"
+          echo "Usage: task tg -- <command> <dir>"
           echo ""
           echo "Examples:"
-          echo "  task tg -- stack generate live/etcdme"
-          echo "  task tg -- stack run plan live/etcdme"
-          echo "  task tg -- stack run apply live/etcdme"
+          echo "  task tg -- plan terraform/live/etcdme-nbg1-dc3"
+          echo "  task tg -- apply terraform/live/etcdme-nbg1-dc3"
           exit 1
         fi
 
-        cd "terraform/$DIR" && terragrunt $CMD
+        cd "$DIR" && terragrunt $CMD
 
   bootstrap:
     desc: Bootstrap S3 backend for Terraform state
