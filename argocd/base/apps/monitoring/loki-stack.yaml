@@ -55,6 +55,7 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - SkipDryRunOnMissingResource=true
     managedNamespaceMetadata:
       labels:
         pod-security.kubernetes.io/enforce: privileged
