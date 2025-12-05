@@ -19,6 +19,9 @@ talos/*.dec.yaml
 *.tfstate
 *.tfstate.backup
 *.tfvars
+*.tfplan
+crash.log
+crash.*.log
 
 # OS
 .DS_Store
