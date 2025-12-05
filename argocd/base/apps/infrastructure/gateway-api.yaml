@@ -1,24 +1,22 @@
-# Keycloak Operator - manages Keycloak instances via CRDs
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: keycloak-operator
+  name: gateway-api
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "-2"
+    argocd.argoproj.io/sync-wave: "-5"
 spec:
   project: default
   source:
-    repoURL: oci://quay.io/keycloak
-    chart: keycloak-operator
-    targetRevision: 26.0.5
+    repoURL: REPO_URL_PLACEHOLDER
+    targetRevision: HEAD
+    path: argocd/base/resources/gateway-api
   destination:
     server: https://kubernetes.default.svc
-    namespace: keycloak
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
-      - CreateNamespace=true
       - SkipDryRunOnMissingResource=true
+      - ServerSideApply=true

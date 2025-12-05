@@ -46,6 +46,11 @@ replacements:
           name: argocd-routes
         fieldPaths:
           - spec.source.repoURL
+      - select:
+          kind: Application
+          name: gateway-api
+        fieldPaths:
+          - spec.source.repoURL
   - source:
       kind: ConfigMap
       name: cluster-config
