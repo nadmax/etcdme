@@ -189,6 +189,33 @@ spec:
         attributes:
           pkce.code.challenge.method: S256
 
+      # n8n - confidential client for oauth2-proxy
+      # Client secret will be set via Job after realm import
+      - clientId: n8n
+        name: n8n Workflow Automation
+        enabled: true
+        publicClient: false
+        clientAuthenticatorType: client-secret
+        redirectUris:
+          - "https://n8n.etcd.me/oauth2/callback"
+        webOrigins:
+          - "https://n8n.etcd.me"
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        protocol: openid-connect
+        attributes:
+          pkce.code.challenge.method: S256
+        protocolMappers:
+          # Audience mapper required for oauth2-proxy
+          - name: audience
+            protocol: openid-connect
+            protocolMapper: oidc-audience-mapper
+            consentRequired: false
+            config:
+              included.client.audience: n8n
+              id.token.claim: "true"
+              access.token.claim: "true"
+
     roles:
       realm:
         - name: admin

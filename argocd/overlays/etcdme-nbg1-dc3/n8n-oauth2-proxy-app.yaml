@@ -1,0 +1,55 @@
+# oauth2-proxy for n8n authentication via Keycloak - etcd.me overlay
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: n8n-oauth2-proxy
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  project: default
+  source:
+    repoURL: https://oauth2-proxy.github.io/manifests
+    chart: oauth2-proxy
+    targetRevision: 7.12.6
+    helm:
+      valuesObject:
+        replicaCount: 1
+        config:
+          clientID: n8n
+          cookieSecret: ""  # Will be set from existingSecret
+        extraArgs:
+          provider: keycloak-oidc
+          oidc-issuer-url: https://auth.etcd.me/realms/homelab
+          code-challenge-method: S256
+          email-domain: "*"
+          cookie-secure: "true"
+          upstream: "http://n8n.n8n.svc.cluster.local:5678"
+          http-address: "0.0.0.0:4180"
+          reverse-proxy: "true"
+          skip-provider-button: "true"
+          pass-access-token: "true"
+          pass-authorization-header: "true"
+          set-authorization-header: "true"
+          set-xauthrequest: "true"
+        existingSecret: n8n-oauth2-proxy
+        proxyVarsAsSecrets: false
+        service:
+          type: ClusterIP
+          port: 4180
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: n8n
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

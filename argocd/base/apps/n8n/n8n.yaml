@@ -1,0 +1,65 @@
+# n8n workflow automation
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: n8n
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  project: default
+  source:
+    repoURL: https://8gears.container-registry.com/chartrepo/library
+    chart: n8n
+    targetRevision: 1.0.1
+    helm:
+      valuesObject:
+        main:
+          config:
+            db:
+              type: postgresdb
+              postgresdb:
+                host: postgres-rw.postgres.svc.cluster.local
+                port: 5432
+                database: n8n
+            generic:
+              timezone: Europe/Paris
+            executions:
+              pruneData: "true"
+              pruneDataMaxAge: 168
+          secret:
+            db:
+              postgresdb:
+                user:
+                  secretKeyRef:
+                    name: n8n-postgres
+                    key: DB_POSTGRESDB_USER
+                password:
+                  secretKeyRef:
+                    name: n8n-postgres
+                    key: DB_POSTGRESDB_PASSWORD
+          extraEnvSecrets:
+            N8N_ENCRYPTION_KEY:
+              name: n8n-encryption
+              key: N8N_ENCRYPTION_KEY
+        ingress:
+          enabled: false
+        service:
+          type: ClusterIP
+          port: 5678
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: n8n
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

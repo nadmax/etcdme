@@ -1,0 +1,22 @@
+# n8n HTTPRoute - routes through oauth2-proxy for authentication
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: n8n-route
+  namespace: n8n
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+spec:
+  parentRefs:
+    - name: main-gateway
+      namespace: cilium-gateway
+  hostnames:
+    - n8n.cluster.local
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: n8n-oauth2-proxy
+          port: 4180

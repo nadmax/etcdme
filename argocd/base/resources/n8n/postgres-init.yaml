@@ -1,0 +1,72 @@
+# Job to create n8n database in postgres cluster
+# Runs after postgres cluster is ready (sync-wave 2)
+# Must run in postgres namespace to access superuser secret
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: n8n-postgres-init
+  namespace: postgres
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: init-db
+          image: postgres:16-alpine
+          env:
+            - name: PGHOST
+              value: "postgres-rw.postgres.svc.cluster.local"
+            - name: PGPORT
+              value: "5432"
+            - name: PGDATABASE
+              value: "postgres"
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-superuser
+                  key: username
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-superuser
+                  key: password
+            - name: N8N_USER
+              valueFrom:
+                secretKeyRef:
+                  name: n8n-postgres-creds
+                  key: username
+            - name: N8N_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: n8n-postgres-creds
+                  key: password
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Waiting for postgres to be ready..."
+              until pg_isready; do
+                sleep 2
+              done
+              echo "Creating n8n user and database..."
+              psql -v ON_ERROR_STOP=1 <<-EOSQL
+                DO \$\$
+                BEGIN
+                  IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${N8N_USER}') THEN
+                    CREATE USER "${N8N_USER}" WITH PASSWORD '${N8N_PASSWORD}';
+                  ELSE
+                    ALTER USER "${N8N_USER}" WITH PASSWORD '${N8N_PASSWORD}';
+                  END IF;
+                END
+                \$\$;
+                SELECT 'CREATE DATABASE n8n OWNER "${N8N_USER}"'
+                WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'n8n')\gexec
+                GRANT ALL PRIVILEGES ON DATABASE n8n TO "${N8N_USER}";
+              EOSQL
+              echo "n8n database setup complete"

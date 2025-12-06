@@ -15,7 +15,7 @@ tasks:
     cmds:
       - echo "Creating namespaces..."
       - |
-        for ns in argocd cert-manager keycloak postgres monitoring; do
+        for ns in argocd cert-manager keycloak postgres monitoring n8n; do
           kubectl create namespace $ns --dry-run=client -o yaml | kubectl apply -f -
         done
       - echo "Applying secrets..."

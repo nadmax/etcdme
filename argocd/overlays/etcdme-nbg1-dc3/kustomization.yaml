@@ -101,8 +101,19 @@ patches:
         path: /spec/hostname/hostname
         value: auth.etcd.me
 
+  # n8n route
+  - target:
+      kind: HTTPRoute
+      name: n8n-route
+    patch: |
+      - op: replace
+        path: /spec/hostnames/0
+        value: n8n.etcd.me
+
 # Files that are too complex to patch - override entirely
   - path: realm-import.yaml
   - path: loki-stack-app.yaml
   - path: argocd-app.yaml
   - path: cluster-issuer.yaml
+  - path: n8n-app.yaml
+  - path: n8n-oauth2-proxy-app.yaml

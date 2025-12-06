@@ -56,11 +56,19 @@ echo ""
 KEYCLOAK_DB_PASSWORD=$(gen_password)
 GRAFANA_ADMIN_PASSWORD=$(gen_password)
 ARGOCD_SERVER_SECRET=$(gen_password)
+N8N_CLIENT_SECRET=$(gen_password)
+N8N_COOKIE_SECRET=$(gen_password)
+N8N_DB_PASSWORD=$(gen_password)
+N8N_ENCRYPTION_KEY=$(gen_password)
 
 echo "Generated passwords:"
 echo "  - Keycloak DB password"
 echo "  - Grafana admin password"
 echo "  - ArgoCD server secret key"
+echo "  - n8n OAuth client secret"
+echo "  - n8n cookie secret"
+echo "  - n8n DB password"
+echo "  - n8n encryption key"
 echo ""
 
 # Copy example and replace values
@@ -84,6 +92,13 @@ sed -i "s|admin-password: REPLACE_ME|admin-password: ${GRAFANA_ADMIN_PASSWORD}|"
 
 # ArgoCD server secret
 sed -i "s|server.secretkey: REPLACE_ME|server.secretkey: ${ARGOCD_SERVER_SECRET}|" "$SECRETS_FILE"
+
+# n8n secrets
+sed -i "s|client-secret: REPLACE_N8N_CLIENT_SECRET|client-secret: ${N8N_CLIENT_SECRET}|g" "$SECRETS_FILE"
+sed -i "s|cookie-secret: REPLACE_N8N_COOKIE_SECRET|cookie-secret: ${N8N_COOKIE_SECRET}|" "$SECRETS_FILE"
+sed -i "s|DB_POSTGRESDB_PASSWORD: REPLACE_N8N_DB_PASSWORD|DB_POSTGRESDB_PASSWORD: ${N8N_DB_PASSWORD}|" "$SECRETS_FILE"
+sed -i "s|password: REPLACE_N8N_DB_PASSWORD|password: ${N8N_DB_PASSWORD}|" "$SECRETS_FILE"
+sed -i "s|N8N_ENCRYPTION_KEY: REPLACE_N8N_ENCRYPTION_KEY|N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}|" "$SECRETS_FILE"
 
 echo -e "${GREEN}Secrets file created: ${SECRETS_FILE}${NC}"
 echo ""
