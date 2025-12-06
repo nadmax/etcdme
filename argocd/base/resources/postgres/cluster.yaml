@@ -8,6 +8,9 @@ metadata:
 spec:
   instances: 1  # Single instance for lab, increase for HA
 
+  # Enable superuser access for database initialization jobs
+  enableSuperuserAccess: true
+
   # PostgreSQL version
   imageName: ghcr.io/cloudnative-pg/postgresql:16.4
 
