@@ -19,6 +19,7 @@ configMapGenerator:
       - repo-url=https://github.com/sofianedjerbi/homelab
       - overlay-path=argocd/overlays/etcdme-nbg1-dc3
       - gateway-path=argocd/overlays/etcdme-nbg1-dc3/resources/gateway
+      - routes-path=argocd/overlays/etcdme-nbg1-dc3/resources/routes
 
 # Repository configuration - replace placeholders only in apps that use them
 replacements:
@@ -67,27 +68,22 @@ replacements:
           name: cilium-gateway
         fieldPaths:
           - spec.source.path
+  - source:
+      kind: ConfigMap
+      name: cluster-config
+      fieldPath: data.routes-path
+    targets:
+      - select:
+          kind: Application
+          name: argocd-routes
+        fieldPaths:
+          - spec.source.path
 
 # Patches to replace domain in various resources
 # Note: Gateway patches are in overlays/etcdme-nbg1-dc3/resources/gateway/kustomization.yaml
+# Note: Route patches are in overlays/etcdme-nbg1-dc3/resources/routes/kustomization.yaml
 patches:
-  # Routes
-  - target:
-      kind: TLSRoute
-      name: argocd-tls-route
-    patch: |
-      - op: replace
-        path: /spec/hostnames/0
-        value: argo.etcd.me
-
-  - target:
-      kind: HTTPRoute
-      name: grafana-route
-    patch: |
-      - op: replace
-        path: /spec/hostnames/0
-        value: loki.etcd.me
-
+  # keycloak-route is managed by root-app, not argocd-routes
   - target:
       kind: HTTPRoute
       name: keycloak-route

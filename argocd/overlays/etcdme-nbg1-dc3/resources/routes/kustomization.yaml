@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../../base/resources/routes
+
+patches:
+  # Patch TLSRoute hostname for ArgoCD
+  - target:
+      kind: TLSRoute
+      name: argocd-tls-route
+    patch: |
+      - op: replace
+        path: /spec/hostnames/0
+        value: argo.etcd.me
+
+  # Patch HTTPRoute hostname for Grafana
+  - target:
+      kind: HTTPRoute
+      name: grafana-route
+    patch: |
+      - op: replace
+        path: /spec/hostnames/0
+        value: loki.etcd.me
