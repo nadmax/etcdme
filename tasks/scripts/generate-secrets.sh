@@ -22,10 +22,6 @@ gen_password() {
   openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 32
 }
 
-# Generate random secret (64 chars for OIDC secrets)
-gen_secret() {
-  openssl rand -base64 48 | tr -dc 'a-zA-Z0-9' | head -c 64
-}
 
 echo -e "${GREEN}=== Cluster Secrets Generator ===${NC}"
 echo ""
@@ -59,14 +55,10 @@ echo ""
 # Generate random secrets
 KEYCLOAK_DB_PASSWORD=$(gen_password)
 GRAFANA_ADMIN_PASSWORD=$(gen_password)
-OIDC_SECRET_ARGOCD=$(gen_secret)
-OIDC_SECRET_GRAFANA=$(gen_secret)
 
 echo "Generated passwords:"
 echo "  - Keycloak DB password"
 echo "  - Grafana admin password"
-echo "  - OIDC client secret (ArgoCD)"
-echo "  - OIDC client secret (Grafana)"
 echo ""
 
 # Copy example and replace values
@@ -87,12 +79,6 @@ sed -i "0,/password: REPLACE_ME/s|password: REPLACE_ME|password: ${KEYCLOAK_DB_P
 
 # Grafana admin
 sed -i "s|admin-password: REPLACE_ME|admin-password: ${GRAFANA_ADMIN_PASSWORD}|" "$SECRETS_FILE"
-
-# OIDC secrets - same value goes to oidc-client-secrets AND the consuming services
-sed -i "s|argocd: REPLACE_OIDC_ARGOCD|argocd: ${OIDC_SECRET_ARGOCD}|" "$SECRETS_FILE"
-sed -i "s|grafana: REPLACE_OIDC_GRAFANA|grafana: ${OIDC_SECRET_GRAFANA}|" "$SECRETS_FILE"
-sed -i "s|oidc.keycloak.clientSecret: REPLACE_OIDC_ARGOCD|oidc.keycloak.clientSecret: ${OIDC_SECRET_ARGOCD}|" "$SECRETS_FILE"
-sed -i "s|GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: REPLACE_OIDC_GRAFANA|GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: ${OIDC_SECRET_GRAFANA}|" "$SECRETS_FILE"
 
 echo -e "${GREEN}Secrets file created: ${SECRETS_FILE}${NC}"
 echo ""

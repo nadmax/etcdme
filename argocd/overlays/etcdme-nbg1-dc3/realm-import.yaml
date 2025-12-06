@@ -1,4 +1,5 @@
 # Keycloak Realm Import - etcd.me overlay
+# Uses public clients with PKCE (no client secret needed)
 apiVersion: k8s.keycloak.org/v2alpha1
 kind: KeycloakRealmImport
 metadata:
@@ -8,16 +9,6 @@ metadata:
     argocd.argoproj.io/sync-wave: "3"
 spec:
   keycloakCRName: keycloak
-  # Placeholders map K8s Secrets to env vars for realm import
-  placeholders:
-    ARGOCD_CLIENT_SECRET:
-      secret:
-        name: oidc-client-secrets
-        key: argocd
-    GRAFANA_CLIENT_SECRET:
-      secret:
-        name: oidc-client-secrets
-        key: grafana
   realm:
     realm: homelab
     enabled: true
@@ -168,35 +159,35 @@ spec:
     defaultOptionalClientScopes:
       - groups
 
-    # OIDC Clients - secrets injected via placeholders from oidc-client-secrets
+    # OIDC Clients - public clients with PKCE (no client secret needed)
     clients:
       - clientId: grafana
         name: Grafana
         enabled: true
-        clientAuthenticatorType: client-secret
-        secret: "$(GRAFANA_CLIENT_SECRET)"
+        publicClient: true
         redirectUris:
           - "https://loki.etcd.me/*"
         webOrigins:
           - "https://loki.etcd.me"
         standardFlowEnabled: true
         directAccessGrantsEnabled: false
-        publicClient: false
         protocol: openid-connect
+        attributes:
+          pkce.code.challenge.method: S256
 
       - clientId: argocd
         name: ArgoCD
         enabled: true
-        clientAuthenticatorType: client-secret
-        secret: "$(ARGOCD_CLIENT_SECRET)"
+        publicClient: true
         redirectUris:
           - "https://argo.etcd.me/auth/callback"
         webOrigins:
           - "https://argo.etcd.me"
         standardFlowEnabled: true
         directAccessGrantsEnabled: false
-        publicClient: false
         protocol: openid-connect
+        attributes:
+          pkce.code.challenge.method: S256
 
     roles:
       realm:

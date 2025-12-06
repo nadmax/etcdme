@@ -24,15 +24,15 @@ spec:
               name: Keycloak
               issuer: https://auth.etcd.me/realms/homelab
               clientID: argocd
-              clientSecret: $oidc.keycloak.clientSecret
+              enablePKCEAuthentication: true
               requestedScopes: ["openid", "profile", "email", "groups"]
           rbac:
             policy.default: role:readonly
             policy.csv: |
               g, admin, role:admin
           secret:
-            # Use externally managed secret (argocd-secret from secrets.sops.yaml)
-            createSecret: false
+            # Let helm create the secret (no OIDC client secret needed with PKCE)
+            createSecret: true
           cmp:
             plugins:
               ksops:
