@@ -28,11 +28,6 @@ spec:
         existingEncryptionKeySecret: n8n-encryption
         # Timezone
         timezone: Europe/Paris
-        # Executions settings
-        config:
-          executions:
-            pruneData: "true"
-            pruneDataMaxAge: 168
         # Ingress disabled (using gateway)
         ingress:
           enabled: false
