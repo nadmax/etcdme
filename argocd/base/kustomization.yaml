@@ -18,5 +18,6 @@ resources:
   # Keycloak via operator CRDs (no child app for these)
   - resources/keycloak/instance.yaml
   - resources/keycloak/realm-import.yaml
+  - resources/keycloak/route.yaml
   # All secrets are in overlay secrets.sops.yaml
   # NOTE: gateway, postgres/cluster, and routes are managed by child apps
