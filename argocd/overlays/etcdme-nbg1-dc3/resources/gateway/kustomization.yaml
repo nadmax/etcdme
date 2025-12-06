@@ -30,3 +30,12 @@ patches:
         value:
           - "*.etcd.me"
           - etcd.me
+
+  # Patch HTTP redirect hostname
+  - target:
+      kind: HTTPRoute
+      name: http-to-https-redirect
+    patch: |
+      - op: replace
+        path: /spec/hostnames/0
+        value: "*.etcd.me"
