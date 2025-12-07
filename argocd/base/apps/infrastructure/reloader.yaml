@@ -8,10 +8,11 @@ spec:
   source:
     repoURL: https://stakater.github.io/stakater-charts
     chart: reloader
-    targetRevision: 1.2.0
+    targetRevision: 2.2.5
     helm:
       values: |
         reloader:
+          autoReloadAll: true
           watchGlobally: true
           resources:
             requests:
