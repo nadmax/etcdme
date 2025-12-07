@@ -157,10 +157,16 @@ data:
             stack.splice(idx + 1, 0, layer);
             this.logger?.info('SSO middleware initialized successfully');
 
-            // Logout endpoint
+            // Logout endpoint - chains: n8n -> oauth2-proxy -> Keycloak
             app.get('/logout', (req, res) => {
               res.clearCookie(cookieName, { path: '/' });
-              res.redirect('/oauth2/sign_out');
+              const keycloakLogout = process.env.N8N_KEYCLOAK_LOGOUT_URL || '';
+              if (keycloakLogout) {
+                // Redirect to oauth2-proxy sign_out, which then redirects to Keycloak
+                res.redirect(`/oauth2/sign_out?rd=${encodeURIComponent(keycloakLogout)}`);
+              } else {
+                res.redirect('/oauth2/sign_out');
+              }
             });
           }
         ]

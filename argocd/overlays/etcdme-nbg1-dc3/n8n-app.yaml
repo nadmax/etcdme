@@ -38,6 +38,8 @@ spec:
             EXTERNAL_HOOK_FILES: "/hooks/hooks.js"
             # Header set by oauth2-proxy containing authenticated user email
             N8N_FORWARD_AUTH_HEADER: "X-Forwarded-Email"
+            # Keycloak logout URL for full SSO logout chain
+            N8N_KEYCLOAK_LOGOUT_URL: "https://auth.etcd.me/realms/homelab/protocol/openid-connect/logout?post_logout_redirect_uri=https://n8n.etcd.me&client_id=n8n"
           volumes:
             - name: hooks
               configMap:
