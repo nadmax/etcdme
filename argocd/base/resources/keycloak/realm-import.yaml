@@ -156,8 +156,8 @@ spec:
       - profile
       - email
       - roles
-    defaultOptionalClientScopes:
       - groups
+    defaultOptionalClientScopes: []
 
     # OIDC Clients - public clients with PKCE (no client secret needed)
     clients:
