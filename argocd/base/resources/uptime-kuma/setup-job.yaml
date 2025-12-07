@@ -1,0 +1,55 @@
+# Job to setup Uptime Kuma admin account and monitors
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: uptime-kuma-setup
+  namespace: uptime-kuma
+  annotations:
+    argocd.argoproj.io/sync-wave: "7"
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: setup
+          image: python:3.11-slim
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+
+              # Install dependencies
+              pip install -q uptime-kuma-api
+
+              # Run setup script
+              python3 /scripts/setup.py
+          env:
+            - name: KUMA_URL
+              value: "http://uptime-kuma.uptime-kuma.svc.cluster.local:3001"
+            - name: KUMA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: uptime-kuma-admin
+                  key: username
+            - name: KUMA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: uptime-kuma-admin
+                  key: password
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+            - name: monitors
+              mountPath: /config
+      volumes:
+        - name: scripts
+          configMap:
+            name: uptime-kuma-setup-script
+        - name: monitors
+          configMap:
+            name: uptime-kuma-monitors

@@ -44,5 +44,8 @@ resources:
   - resources/n8n/route.yaml
   # Uptime Kuma resources
   - resources/uptime-kuma/route.yaml
+  - resources/uptime-kuma/monitors-config.yaml
+  - resources/uptime-kuma/setup-script.yaml
+  - resources/uptime-kuma/setup-job.yaml
   # All secrets are in overlay secrets.sops.yaml
   # NOTE: gateway, postgres/cluster, and routes are managed by child apps

@@ -62,6 +62,7 @@ N8N_DB_PASSWORD=$(gen_password)
 N8N_ENCRYPTION_KEY=$(gen_password)
 UPTIME_KUMA_CLIENT_SECRET=$(gen_password)
 UPTIME_KUMA_COOKIE_SECRET=$(gen_password)
+UPTIME_KUMA_ADMIN_PASSWORD=$(gen_password)
 
 echo "Generated passwords:"
 echo "  - Keycloak DB password"
@@ -73,6 +74,7 @@ echo "  - n8n DB password"
 echo "  - n8n encryption key"
 echo "  - Uptime Kuma OAuth client secret"
 echo "  - Uptime Kuma cookie secret"
+echo "  - Uptime Kuma admin password"
 echo ""
 
 # Copy example and replace values
@@ -105,6 +107,7 @@ sed -i "s|password: REPLACE_N8N_DB_PASSWORD|password: ${N8N_DB_PASSWORD}|" "$SEC
 sed -i "s|N8N_ENCRYPTION_KEY: REPLACE_N8N_ENCRYPTION_KEY|N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}|" "$SECRETS_FILE"
 
 # Uptime Kuma secrets
+sed -i "s|password: REPLACE_UPTIME_KUMA_ADMIN_PASSWORD|password: ${UPTIME_KUMA_ADMIN_PASSWORD}|" "$SECRETS_FILE"
 sed -i "s|client-secret: REPLACE_UPTIME_KUMA_CLIENT_SECRET|client-secret: ${UPTIME_KUMA_CLIENT_SECRET}|g" "$SECRETS_FILE"
 sed -i "s|cookie-secret: REPLACE_UPTIME_KUMA_COOKIE_SECRET|cookie-secret: ${UPTIME_KUMA_COOKIE_SECRET}|" "$SECRETS_FILE"
 
