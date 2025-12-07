@@ -31,11 +31,21 @@ spec:
         existingEncryptionKeySecret: n8n-encryption
         # Timezone
         timezone: Europe/Paris
-        # Main container config
+        # Main container config - SSO via oauth2-proxy
         main:
-          # Disable n8n built-in auth (oauth2-proxy handles it)
           extraEnvVars:
-            N8N_USER_MANAGEMENT_DISABLED: "true"
+            # External hooks file for SSO authentication
+            EXTERNAL_HOOK_FILES: "/hooks/hooks.js"
+            # Header set by oauth2-proxy containing authenticated user email
+            N8N_FORWARD_AUTH_HEADER: "X-Forwarded-Email"
+          volumes:
+            - name: hooks
+              configMap:
+                name: n8n-hooks
+          volumeMounts:
+            - name: hooks
+              mountPath: /hooks
+              readOnly: true
         # Ingress disabled (using gateway)
         ingress:
           enabled: false
