@@ -23,13 +23,21 @@ spec:
             - |
               set -e
 
-              # Wait for Keycloak to be ready
-              until curl -sf http://keycloak-service.keycloak.svc.cluster.local:8080/health/ready; do
-                echo "Waiting for Keycloak..."
+              # Wait for Keycloak to be ready (retry login)
+              for i in $(seq 1 30); do
+                if /opt/keycloak/bin/kcadm.sh config credentials \
+                  --server http://keycloak-service.keycloak.svc.cluster.local:8080 \
+                  --realm master \
+                  --user "$KEYCLOAK_ADMIN" \
+                  --password "$KEYCLOAK_ADMIN_PASSWORD" 2>/dev/null; then
+                  echo "Logged in to Keycloak"
+                  break
+                fi
+                echo "Waiting for Keycloak... ($i/30)"
                 sleep 5
               done
 
-              # Login to Keycloak
+              # Verify login worked
               /opt/keycloak/bin/kcadm.sh config credentials \
                 --server http://keycloak-service.keycloak.svc.cluster.local:8080 \
                 --realm master \
