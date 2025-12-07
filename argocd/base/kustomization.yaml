@@ -20,6 +20,7 @@ resources:
   - apps/infrastructure/keycloak-operator.yaml
   - apps/infrastructure/postgres-cluster.yaml
   - apps/infrastructure/reloader.yaml
+  - apps/infrastructure/argocd-image-updater.yaml
   - apps/monitoring/loki-stack.yaml
   - apps/monitoring/prometheus.yaml
   # n8n apps
