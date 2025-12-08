@@ -21,4 +21,4 @@ patches:
     patch: |
       - op: replace
         path: /spec/hostnames/0
-        value: loki.etcd.me
+        value: grafana.etcd.me
