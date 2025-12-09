@@ -22,9 +22,12 @@ spec:
             - containerPort: 8334
               name: http
               protocol: TCP
+          env:
+            - name: APPLICATION_URL
+              value: ""
           volumeMounts:
             - name: data
-              mountPath: /app/data
+              mountPath: /app/data/state
           resources:
             requests:
               cpu: 50m
