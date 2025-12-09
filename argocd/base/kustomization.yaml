@@ -50,5 +50,7 @@ resources:
   - resources/n8n/route.yaml
   # Uptime Kuma resources
   - resources/uptime-kuma/route.yaml
+  # Playwright MCP route (managed here for overlay patching)
+  - resources/playwright-mcp/route.yaml
   # All secrets are in overlay secrets.sops.yaml
   # NOTE: gateway, postgres/cluster, and routes are managed by child apps
