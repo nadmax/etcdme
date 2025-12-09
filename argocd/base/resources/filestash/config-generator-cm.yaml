@@ -61,10 +61,19 @@ data:
     async function main() {
       const configPath = process.env.CONFIG_PATH || '/app/data/state/config/config.json';
 
-      // Check if config already exists
+      // Check if config already exists and is properly configured
       if (fs.existsSync(configPath)) {
-        console.log('Config already exists, skipping generation');
-        process.exit(0);
+        try {
+          const existing = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+          // Regenerate if admin password is not set or OIDC is not configured
+          if (existing.auth?.admin && existing.middleware?.identity_provider) {
+            console.log('Config already properly configured, skipping generation');
+            process.exit(0);
+          }
+          console.log('Existing config incomplete, regenerating...');
+        } catch (e) {
+          console.log('Could not parse existing config, regenerating...');
+        }
       }
 
       // Required environment variables
@@ -98,6 +107,7 @@ data:
           secret_key: secretKey,
           force_ssl: true,
         },
+        auth: {},
         log: {
           level: 'INFO',
           telemetry: false,
@@ -109,9 +119,9 @@ data:
         },
       };
 
-      // Add admin password if provided
+      // Add admin password if provided (must be under auth.admin)
       if (adminPassword) {
-        config.general.admin = hashPassword(adminPassword);
+        config.auth.admin = hashPassword(adminPassword);
         console.log('Admin password configured');
       }
 
