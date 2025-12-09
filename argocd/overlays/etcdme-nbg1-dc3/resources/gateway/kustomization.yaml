@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - ../../../../base/resources/gateway
+  - mcp-certificate.yaml
 
 patches:
   # Patch Gateway listener hostnames for etcd.me domain
@@ -38,6 +39,32 @@ patches:
             mode: Terminate
             certificateRefs:
               - name: wildcard-tls
+                kind: Secret
+          allowedRoutes:
+            namespaces:
+              from: All
+      # MCP subdomain listeners (for *.mcp.etcd.me)
+      - op: add
+        path: /spec/listeners/-
+        value:
+          name: http-mcp
+          protocol: HTTP
+          port: 80
+          hostname: "*.mcp.etcd.me"
+          allowedRoutes:
+            namespaces:
+              from: All
+      - op: add
+        path: /spec/listeners/-
+        value:
+          name: https-mcp
+          protocol: HTTPS
+          port: 443
+          hostname: "*.mcp.etcd.me"
+          tls:
+            mode: Terminate
+            certificateRefs:
+              - name: mcp-wildcard-tls
                 kind: Secret
           allowedRoutes:
             namespaces:

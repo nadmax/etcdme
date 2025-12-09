@@ -1,0 +1,16 @@
+# Wildcard certificate for *.mcp.etcd.me subdomains
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: mcp-wildcard-tls
+  namespace: default
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  secretName: mcp-wildcard-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - "*.mcp.etcd.me"
+    - mcp.etcd.me
