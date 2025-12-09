@@ -38,6 +38,11 @@ spec:
             EXTERNAL_HOOK_FILES: "/hooks/hooks.js"
             # Header set by oauth2-proxy containing authenticated user email
             N8N_FORWARD_AUTH_HEADER: "X-Forwarded-Email"
+            # External host URL for webhooks
+            N8N_HOST: "n8n.etcd.me"
+            WEBHOOK_URL: "https://n8n.etcd.me/"
+            N8N_EDITOR_BASE_URL: "https://n8n.etcd.me/"
+            N8N_PROTOCOL: "https"
           volumes:
             - name: hooks
               configMap:
