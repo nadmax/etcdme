@@ -25,8 +25,8 @@ spec:
             - name: data
               mountPath: /app/data/state
         - name: config-generator
-          image: node:20-alpine
-          command: ['sh', '-c', 'npm install --prefix /tmp bcryptjs 2>/dev/null && NODE_PATH=/tmp/node_modules node /scripts/generate-config.js']
+          image: golang:1.21-alpine
+          command: ['sh', '-c', 'cd /tmp && cp /scripts/generate-config.go . && go mod init config && go mod tidy && go run generate-config.go']
           env:
             - name: CONFIG_PATH
               value: /app/data/state/config/config.json

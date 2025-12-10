@@ -4,194 +4,188 @@ metadata:
   name: filestash-config-generator
   namespace: filestash
 data:
-  generate-config.js: |
-    #!/usr/bin/env node
-    /**
-     * Filestash Config Generator
-     * Generates config.json with properly encrypted middleware settings
-     *
-     * Replicates Filestash's encryption scheme:
-     * - Key derivation: SHA256("PROOF_" + secret_key)[:16]
-     * - Compression: zlib
-     * - Encryption: AES-128-GCM
-     * - Encoding: base64url
-     */
+  generate-config.go: |
+    package main
 
-    const crypto = require('crypto');
-    const zlib = require('zlib');
-    const fs = require('fs');
-    const path = require('path');
+    import (
+    	"bytes"
+    	"compress/zlib"
+    	"crypto/aes"
+    	"crypto/cipher"
+    	"crypto/rand"
+    	"crypto/sha256"
+    	"encoding/base64"
+    	"encoding/json"
+    	"fmt"
+    	"os"
 
-    // Hash function matching Filestash's implementation
-    function hash(str, n) {
-      const h = crypto.createHash('sha256').update(str).digest();
-      return h.slice(0, n);
+    	"golang.org/x/crypto/bcrypt"
+    )
+
+    func Hash(str string, n int) []byte {
+    	h := sha256.New()
+    	h.Write([]byte(str))
+    	return h.Sum(nil)[:n]
     }
 
-    // Encrypt using AES-GCM (matching Filestash's PerformConfigEncryption)
-    function encrypt(secretKey, plaintext) {
-      // Derive key the same way Filestash does
-      // Step 1: SHA256("PROOF_" + secret)[:len(secret)]
-      const derivedKey = hash('PROOF_' + secretKey, secretKey.length);
-      // Step 2: SHA256(derivedKey)[:16] - pass Buffer directly, not string
-      const key = hash(derivedKey, 16);
+    func Encrypt(secret string, plaintext []byte) string {
+    	derivedKey := Hash("PROOF_"+secret, len(secret))
+    	key := Hash(string(derivedKey), 16)
 
-      // Compress with zlib
-      const compressed = zlib.deflateSync(Buffer.from(plaintext), { level: 9 });
+    	block, _ := aes.NewCipher(key)
+    	gcm, _ := cipher.NewGCM(block)
 
-      // Create AES-GCM cipher (12-byte nonce for GCM)
-      const nonce = crypto.randomBytes(12);
-      const cipher = crypto.createCipheriv('aes-128-gcm', key, nonce);
+    	// Compress
+    	compressed := bytes.NewBuffer(nil)
+    	w, _ := zlib.NewWriterLevel(compressed, zlib.BestCompression)
+    	w.Write(plaintext)
+    	w.Close()
 
-      // Encrypt
-      const encrypted = Buffer.concat([cipher.update(compressed), cipher.final()]);
-      const authTag = cipher.getAuthTag();
+    	// Encrypt
+    	nonce := make([]byte, gcm.NonceSize())
+    	rand.Read(nonce)
+    	ciphertext := gcm.Seal(nil, nonce, compressed.Bytes(), nil)
 
-      // Combine: nonce + ciphertext + authTag
-      const result = Buffer.concat([nonce, encrypted, authTag]);
+    	// Combine
+    	result := make([]byte, len(nonce)+len(ciphertext))
+    	copy(result, nonce)
+    	copy(result[len(nonce):], ciphertext)
 
-      // Return base64 URL encoded with padding (Go's base64.URLEncoding includes padding)
-      let b64 = result.toString('base64url');
-      // Add padding
-      while (b64.length % 4 !== 0) {
-        b64 += '=';
-      }
-      return b64;
+    	return base64.URLEncoding.EncodeToString(result)
     }
 
-    // Hash password using bcrypt (requires bcryptjs to be installed)
-    function hashPassword(password) {
-      const bcrypt = require('bcryptjs');
-      return bcrypt.hashSync(password, 10);
+    func HashPassword(password string) string {
+    	hash, _ := bcrypt.GenerateFromPassword([]byte(password), 10)
+    	return string(hash)
     }
 
-    async function main() {
-      const configPath = process.env.CONFIG_PATH || '/app/data/state/config/config.json';
+    func main() {
+    	configPath := os.Getenv("CONFIG_PATH")
+    	if configPath == "" {
+    		configPath = "/app/data/state/config/config.json"
+    	}
 
-      // Check if config already exists and is properly configured
-      const applicationURL = process.env.APPLICATION_URL || '';
-      const forceRegenerate = process.env.FORCE_REGENERATE === 'true';
+    	forceRegenerate := os.Getenv("FORCE_REGENERATE") == "true"
+    	applicationURL := os.Getenv("APPLICATION_URL")
 
-      if (forceRegenerate && fs.existsSync(configPath)) {
-        console.log('FORCE_REGENERATE=true, removing existing config...');
-        fs.unlinkSync(configPath);
-      }
+    	// Check existing config
+    	if !forceRegenerate {
+    		if data, err := os.ReadFile(configPath); err == nil {
+    			var existing map[string]interface{}
+    			if json.Unmarshal(data, &existing) == nil {
+    				general, _ := existing["general"].(map[string]interface{})
+    				auth, _ := existing["auth"].(map[string]interface{})
+    				middleware, _ := existing["middleware"].(map[string]interface{})
 
-      if (fs.existsSync(configPath)) {
-        try {
-          const existing = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-          // Regenerate if admin password is not set, OIDC is not configured, or host is wrong
-          const hostCorrect = existing.general?.host === applicationURL;
-          if (existing.auth?.admin && existing.middleware?.identity_provider && hostCorrect) {
-            console.log('Config already properly configured, skipping generation');
-            process.exit(0);
-          }
-          if (!hostCorrect) {
-            console.log(`Host mismatch: ${existing.general?.host} vs ${applicationURL}, regenerating...`);
-          } else {
-            console.log('Existing config incomplete, regenerating...');
-          }
-        } catch (e) {
-          console.log('Could not parse existing config, regenerating...');
-        }
-      }
+    				hostCorrect := general != nil && general["host"] == applicationURL
+    				hasAdmin := auth != nil && auth["admin"] != nil
+    				hasMiddleware := middleware != nil && middleware["identity_provider"] != nil
 
-      // Required environment variables
-      let secretKey = process.env.FILESTASH_SECRET_KEY || '';
-      if (!secretKey || secretKey.length < 16) {
-        secretKey = crypto.randomBytes(12).toString('base64').slice(0, 16);
-        console.log('Generated random secret_key');
-      }
+    				if hostCorrect && hasAdmin && hasMiddleware {
+    					fmt.Println("Config already properly configured, skipping generation")
+    					return
+    				}
+    				if !hostCorrect {
+    					fmt.Printf("Host mismatch: %v vs %s, regenerating...\n", general["host"], applicationURL)
+    				} else {
+    					fmt.Println("Existing config incomplete, regenerating...")
+    				}
+    			}
+    		}
+    	} else {
+    		fmt.Println("FORCE_REGENERATE=true, regenerating config...")
+    	}
 
-      const adminPassword = process.env.FILESTASH_ADMIN_PASSWORD || '';
+    	// Get secret key
+    	secretKey := os.Getenv("FILESTASH_SECRET_KEY")
+    	if len(secretKey) < 16 {
+    		b := make([]byte, 24)
+    		rand.Read(b)
+    		secretKey = base64.StdEncoding.EncodeToString(b)[:32]
+    		fmt.Println("Generated random secret_key")
+    	}
 
-      // OIDC settings
-      const oidcClientID = process.env.OIDC_CLIENT_ID || '';
-      const oidcClientSecret = process.env.OIDC_CLIENT_SECRET || '';
-      const oidcConfigURL = process.env.OIDC_CONFIG_URL || '';
+    	// Build config
+    	config := map[string]interface{}{
+    		"general": map[string]interface{}{
+    			"name":       "Filestash",
+    			"port":       8334,
+    			"host":       applicationURL,
+    			"secret_key": secretKey,
+    			"force_ssl":  true,
+    		},
+    		"auth": map[string]interface{}{},
+    		"log": map[string]interface{}{
+    			"level":     "INFO",
+    			"telemetry": false,
+    		},
+    		"features": map[string]interface{}{
+    			"api": map[string]interface{}{
+    				"enable": true,
+    			},
+    		},
+    	}
 
-      // S3 backend settings
-      const s3Endpoint = process.env.S3_ENDPOINT || '';
-      const s3AccessKey = process.env.S3_ACCESS_KEY || '';
-      const s3SecretKey = process.env.S3_SECRET_KEY || '';
-      const s3Bucket = process.env.S3_BUCKET || '';
-      const s3Region = process.env.S3_REGION || 'us-east-1';
+    	// Add admin password
+    	adminPassword := os.Getenv("FILESTASH_ADMIN_PASSWORD")
+    	if adminPassword != "" {
+    		config["auth"].(map[string]interface{})["admin"] = HashPassword(adminPassword)
+    		fmt.Println("Admin password configured")
+    	}
 
-      // Build config structure
-      const config = {
-        general: {
-          name: 'Filestash',
-          port: 8334,
-          host: applicationURL,
-          secret_key: secretKey,
-          force_ssl: true,
-        },
-        auth: {},
-        log: {
-          level: 'INFO',
-          telemetry: false,
-        },
-        features: {
-          api: {
-            enable: true,
-          },
-        },
-      };
+    	// Add OIDC middleware
+    	oidcClientID := os.Getenv("OIDC_CLIENT_ID")
+    	oidcClientSecret := os.Getenv("OIDC_CLIENT_SECRET")
+    	oidcConfigURL := os.Getenv("OIDC_CONFIG_URL")
 
-      // Add admin password if provided (must be under auth.admin)
-      if (adminPassword) {
-        config.auth.admin = hashPassword(adminPassword);
-        console.log('Admin password configured');
-      }
+    	if oidcClientID != "" && oidcClientSecret != "" && oidcConfigURL != "" {
+    		oidcParams := map[string]string{
+    			"client_id":     oidcClientID,
+    			"client_secret": oidcClientSecret,
+    			"config_url":    oidcConfigURL,
+    			"scope":         "openid profile email",
+    		}
+    		jsonBytes, _ := json.Marshal(oidcParams)
+    		encryptedParams := Encrypt(secretKey, jsonBytes)
 
-      // Add OIDC middleware if configured
-      if (oidcClientID && oidcClientSecret && oidcConfigURL) {
-        // Note: 'type' is at outer level, not in encrypted params
-        const oidcParams = {
-          client_id: oidcClientID,
-          client_secret: oidcClientSecret,
-          config_url: oidcConfigURL,
-          scope: 'openid profile email',
-        };
+    		config["middleware"] = map[string]interface{}{
+    			"identity_provider": map[string]interface{}{
+    				"type":   "openid",
+    				"params": encryptedParams,
+    			},
+    		}
+    		fmt.Println("OIDC authentication configured")
+    	}
 
-        const encryptedParams = encrypt(secretKey, JSON.stringify(oidcParams));
+    	// Add S3 backend
+    	s3Endpoint := os.Getenv("S3_ENDPOINT")
+    	s3AccessKey := os.Getenv("S3_ACCESS_KEY")
+    	s3SecretKey := os.Getenv("S3_SECRET_KEY")
+    	s3Bucket := os.Getenv("S3_BUCKET")
+    	s3Region := os.Getenv("S3_REGION")
+    	if s3Region == "" {
+    		s3Region = "us-east-1"
+    	}
 
-        config.middleware = {
-          identity_provider: {
-            type: 'openid',
-            params: encryptedParams,
-          },
-        };
-        console.log('OIDC authentication configured');
-      }
+    	if s3Endpoint != "" && s3AccessKey != "" && s3SecretKey != "" && s3Bucket != "" {
+    		config["connections"] = []map[string]interface{}{
+    			{
+    				"type":              "s3",
+    				"label":             "Cloud Storage",
+    				"endpoint":          s3Endpoint,
+    				"access_key_id":     s3AccessKey,
+    				"secret_access_key": s3SecretKey,
+    				"bucket":            s3Bucket,
+    				"region":            s3Region,
+    				"path":              "/",
+    			},
+    		}
+    		fmt.Println("S3 backend configured")
+    	}
 
-      // Add S3 backend if configured
-      if (s3Endpoint && s3AccessKey && s3SecretKey && s3Bucket) {
-        config.connections = [
-          {
-            type: 's3',
-            label: 'Cloud Storage',
-            endpoint: s3Endpoint,
-            access_key_id: s3AccessKey,
-            secret_access_key: s3SecretKey,
-            bucket: s3Bucket,
-            region: s3Region,
-            path: '/',
-          },
-        ];
-        console.log('S3 backend configured');
-      }
-
-      // Create config directory
-      const configDir = path.dirname(configPath);
-      fs.mkdirSync(configDir, { recursive: true });
-
-      // Write config
-      fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-      console.log(`Config written to ${configPath}`);
+    	// Write config
+    	jsonData, _ := json.MarshalIndent(config, "", "  ")
+    	os.MkdirAll("/app/data/state/config", 0755)
+    	os.WriteFile(configPath, jsonData, 0644)
+    	fmt.Printf("Config written to %s\n", configPath)
     }
-
-    main().catch((err) => {
-      console.error('Error:', err.message);
-      process.exit(1);
-    });
