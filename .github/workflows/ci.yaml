@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  yaml-lint:
+    name: YAML Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: YAML Lint
+        uses: reviewdog/action-yamllint@v1
+        with:
+          reporter: github-pr-review
+          yamllint_flags: '-c .yamllint.yaml argocd/'
+
+  kube-lint:
+    name: Kubernetes Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Kube Linter
+        uses: stackrox/kube-linter-action@v1
+        with:
+          directory: argocd/base/resources
+          config: .kube-linter.yaml
+
+  terraform-lint:
+    name: Terraform Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Init TFLint
+        run: tflint --init
+
+      - name: Run TFLint
+        uses: reviewdog/action-tflint@v1
+        with:
+          reporter: github-pr-review
+          tflint_rulesets: ""
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trivy IaC Scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: config
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          format: table
+          exit-code: '0'
+
+  validate:
+    name: Validate Manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Kubernetes manifests
+        uses: azure/k8s-lint@v3
+        with:
+          manifests: argocd/base/resources
