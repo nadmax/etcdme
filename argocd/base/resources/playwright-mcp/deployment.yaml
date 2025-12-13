@@ -54,8 +54,7 @@ spec:
             periodSeconds: 5
         # Playwright MCP server
         - name: playwright-mcp
-          image: mcr.microsoft.com/playwright/mcp
-          imagePullPolicy: Always
+          image: mcr.microsoft.com/playwright/mcp:v0.0.52
           command: ["node"]
           args:
             - "cli.js"

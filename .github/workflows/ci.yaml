@@ -71,8 +71,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install kubeconform
+        run: |
+          curl -sL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz
+          sudo mv kubeconform /usr/local/bin/
+
       - name: Validate Kubernetes manifests
-        uses: azure/k8s-lint@v3
-        with:
-          manifests: argocd/base/resources
-          kubeconformOpts: -summary -ignore-missing-schemas
+        run: |
+          find argocd/base/resources -name '*.yaml' -type f \
+            ! -name 'kustomization.yaml' \
+            -exec kubeconform -strict -summary \
+              -schema-location default \
+              -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+              {} +
