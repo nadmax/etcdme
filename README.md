@@ -20,7 +20,7 @@ High-availability Kubernetes on Hetzner Cloud. Built for resilience.
 - **ArgoCD** - GitOps with automatic drift correction
 - **SOPS + age** - Encrypted secrets in Git
 - **Cilium** - eBPF networking + Gateway API
-- **Cloudflare** - Global DNS with health checks
+- **AWS Route 53** - DNS management
 
 ## Structure
 
@@ -43,7 +43,7 @@ task argocd:bootstrap
 
 ## Services
 
-Postgres, Keycloak, Grafana, Uptime Kuma, n8n, and more.
+Postgres, Keycloak, Grafana, Loki, Uptime Kuma, n8n, and more.
 
 ---
 
