@@ -11,13 +11,15 @@
     "yq-go@latest",
     "terraform@latest",
     "terragrunt@latest",
+    "opentofu@latest",
     "packer@latest",
     "direnv@latest",
     "argocd@latest",
     "hcloud@latest",
     "sops@latest",
     "age@latest",
-    "kustomize@latest"
+    "kustomize@latest",
+    "stu@latest"
   ],
   "env": {
     "PROJECT_ROOT": "$PWD",
