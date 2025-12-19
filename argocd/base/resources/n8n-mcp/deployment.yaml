@@ -47,6 +47,8 @@ spec:
               mountPath: /var/run/openresty
             - name: nginx-cache
               mountPath: /var/cache/nginx
+            - name: tmp
+              mountPath: /tmp
           ports:
             - containerPort: 8080
               name: http
@@ -80,6 +82,11 @@ spec:
               value: "3000"
             - name: LOG_LEVEL
               value: "info"
+            - name: AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: n8n-mcp-auth
+                  key: token
           resources:
             requests:
               cpu: 50m
@@ -103,6 +110,8 @@ spec:
         - name: nginx-tmp
           emptyDir: {}
         - name: nginx-cache
+          emptyDir: {}
+        - name: tmp
           emptyDir: {}
         - name: n8n-mcp-tmp
           emptyDir: {}
