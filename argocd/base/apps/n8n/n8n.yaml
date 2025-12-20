@@ -59,14 +59,14 @@ spec:
           enabled: true
           type: ClusterIP
           port: 5678
-        # Resources
+        # Resources - increased for AI workflows
         resources:
           requests:
-            cpu: 100m
-            memory: 256Mi
-          limits:
-            cpu: 500m
+            cpu: 200m
             memory: 512Mi
+          limits:
+            cpu: "1"
+            memory: 1536Mi
         # Probe configuration - give n8n more time to start
         livenessProbe:
           initialDelaySeconds: 30
