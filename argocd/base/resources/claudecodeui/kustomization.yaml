@@ -4,7 +4,7 @@ kind: Kustomization
 
 resources:
   # Note: namespace is created by root-app (sync-wave -1) before secrets
+  # Note: route is managed by root-app overlay for domain customization
   - deployment.yaml
   - service.yaml
   - pvc.yaml
-  - route.yaml
