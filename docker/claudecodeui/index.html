@@ -28,7 +28,12 @@
 
     <!-- Fix: Node.js process polyfill for browser compatibility -->
     <script>
-      window.process = window.process || { env: { NODE_ENV: 'production' } };
+      window.process = window.process || {
+        env: { NODE_ENV: 'production' },
+        cwd: function() { return '/'; },
+        platform: 'browser',
+        version: 'v20.0.0'
+      };
     </script>
   </head>
   <body>
